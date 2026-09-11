@@ -46,17 +46,42 @@ export default function App() {
     setDarkMode(prev => !prev);
   };
 
-  // Route resolver: parses pathname, search params, or hash
+  // Helper to detect repository base path when hosted on GitHub Pages (e.g. /my-repo)
+  const getBasePath = useCallback((): string => {
+    if (typeof window === 'undefined') return '';
+    const isGitHubPages = window.location.hostname.endsWith('github.io');
+    if (isGitHubPages) {
+      const segments = window.location.pathname.split('/').filter(Boolean);
+      if (segments.length > 0) {
+        const first = segments[0];
+        if (first !== 'tools' && first !== 'calculators' && first !== 'admin') {
+          return `/${first}`;
+        }
+      }
+    }
+    return '';
+  }, []);
+
+  // Route resolver: parses pathname, search params, 404 SPA redirects, or hash
   const resolveRoute = useCallback(() => {
     const pathname = window.location.pathname;
     const searchParams = new URLSearchParams(window.location.search);
     const hash = window.location.hash.replace(/^#\/?/, '');
 
+    // Check if redirected from GitHub Pages 404.html via ?p=...
+    const pParam = searchParams.get('p');
     let toolSlug = searchParams.get('tool') || hash;
 
+    if (!toolSlug && pParam) {
+      const pMatch = pParam.match(/(?:tools|calculators)\/([^/?#]+)/);
+      if (pMatch && pMatch[1]) {
+        toolSlug = pMatch[1];
+      }
+    }
+
     if (!toolSlug) {
-      // Check /tools/[slug] or /calculators/[slug]
-      const toolMatch = pathname.match(/^\/(?:tools|calculators)\/([^/]+)/);
+      // Check /tools/[slug] or /calculators/[slug] anywhere in pathname
+      const toolMatch = pathname.match(/(?:tools|calculators)\/([^/?#]+)/);
       if (toolMatch && toolMatch[1]) {
         toolSlug = toolMatch[1];
       }
@@ -71,7 +96,10 @@ export default function App() {
       }
     }
 
-    if (pathname === '/admin' || searchParams.get('admin') === 'true') {
+    const isAdminRoute = pathname.includes('/admin') || 
+                         searchParams.get('admin') === 'true' || 
+                         (pParam && pParam.includes('admin'));
+    if (isAdminRoute) {
       setAdminPanelOpen(true);
       setActiveTool(null);
       return;
@@ -96,10 +124,13 @@ export default function App() {
 
   // Sync activeTool with URL & Document Title & SEO meta tags
   useEffect(() => {
+    const basePath = getBasePath();
+
     if (activeTool) {
-      const newPath = activeTool.category === 'calculator' 
+      const toolSubpath = activeTool.category === 'calculator' 
         ? `/calculators/${activeTool.slug}` 
         : `/tools/${activeTool.slug}`;
+      const newPath = `${basePath}${toolSubpath}`;
 
       if (window.location.pathname !== newPath) {
         window.history.pushState({ toolId: activeTool.id }, '', newPath);
@@ -112,20 +143,25 @@ export default function App() {
         metaDesc.setAttribute('content', activeTool.seoDescription);
       }
     } else if (adminPanelOpen) {
-      if (window.location.pathname !== '/admin') {
-        window.history.pushState({}, '', '/admin');
+      const newPath = `${basePath}/admin`;
+      if (window.location.pathname !== newPath) {
+        window.history.pushState({}, '', newPath);
       }
       document.title = 'Admin Control Center | ToolStack';
     } else {
-      if (window.location.pathname !== '/' && window.location.search === '') {
-        window.history.pushState({}, '', '/');
+      const homePath = basePath ? `${basePath}/` : '/';
+      const isSubRoute = window.location.pathname.includes('/tools/') || 
+                         window.location.pathname.includes('/calculators/') || 
+                         window.location.pathname.includes('/admin');
+      if (isSubRoute) {
+        window.history.pushState({}, '', homePath);
       }
-      document.title = 'ToolStack - 50+ Free Production Online Tools';
+      document.title = 'ToolStack - All-in-One Free Online Tools';
     }
 
     // Scroll to top upon page navigation
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeTool, adminPanelOpen]);
+  }, [activeTool, adminPanelOpen, getBasePath]);
 
   // Global Keyboard Shortcuts (Cmd+K or Ctrl+K for search)
   useEffect(() => {
@@ -153,8 +189,12 @@ export default function App() {
     setSelectedCategory(catId);
     setActiveTool(null);
     setAdminPanelOpen(false);
-    if (window.location.pathname !== '/') {
-      window.history.pushState({}, '', '/');
+    const basePath = getBasePath();
+    const homePath = basePath ? `${basePath}/` : '/';
+    if (window.location.pathname.includes('/tools/') || 
+        window.location.pathname.includes('/calculators/') || 
+        window.location.pathname.includes('/admin')) {
+      window.history.pushState({}, '', homePath);
     }
   };
 
@@ -162,8 +202,12 @@ export default function App() {
     setActiveTool(null);
     setSelectedCategory(null);
     setAdminPanelOpen(false);
-    if (window.location.pathname !== '/') {
-      window.history.pushState({}, '', '/');
+    const basePath = getBasePath();
+    const homePath = basePath ? `${basePath}/` : '/';
+    if (window.location.pathname.includes('/tools/') || 
+        window.location.pathname.includes('/calculators/') || 
+        window.location.pathname.includes('/admin')) {
+      window.history.pushState({}, '', homePath);
     }
   };
 

@@ -80,7 +80,7 @@ ToolStack is a **100% client-side** utilities powerhouse.
   // --- SVG Optimizer Logic ---
   const optimizedSvg = useMemo(() => {
     const raw = svgInput.trim();
-    if (!raw) return '';
+    if (!raw) return { svg: '', originalBytes: 0, cleanBytes: 0, savings: 0 };
 
     // Strip comments, metadata, extra whitespace, doctypes
     let cleaned = raw

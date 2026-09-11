@@ -58,7 +58,7 @@ interface AuthContextType {
   updateUserStatus: (userId: string, status: 'active' | 'suspended') => Promise<void>;
   deleteUserAccount: (userId: string) => Promise<void>;
   createAdminUser: (email: string, displayName: string, role: 'admin' | 'user') => Promise<void>;
-  getAdminLogs: () => Promise<AdminAuditLog[]>;
+  getAdminLogs: (countLimit?: number) => Promise<AdminAuditLog[]>;
   logAdminAction: (action: string, details: string) => Promise<void>;
   clearAdminLogs: () => Promise<void>;
 }
@@ -528,8 +528,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const getAdminLogs = async (): Promise<AdminAuditLog[]> => {
-    const logs: AdminAuditLog[] = [];
+  const getAdminLogs = async (countLimit?: number): Promise<AdminAuditLog[]> => {
+    let logs: AdminAuditLog[] = [];
     try {
       const snap = await getDocs(collection(db, 'admin_logs'));
       snap.forEach(d => logs.push(d.data() as AdminAuditLog));
@@ -547,7 +547,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: new Date().toISOString()
       });
     }
-    return logs;
+    return countLimit ? logs.slice(0, countLimit) : logs;
   };
 
   const clearAdminLogs = async () => {
