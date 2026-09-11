@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'rajht203@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if (isOwner(userId) &&
+        request.resource.data.userId == userId &&
+        request.resource.data.email is string &&
+        (request.resource.data.role == 'user' || (request.resource.data.role == 'admin' && request.auth.token.email == 'rajht203@gmail.com'))) || isAdmin();
+      allow update: if (isOwner(userId) &&
+        request.resource.data.userId == userId &&
+        (request.resource.data.role == resource.data.role || isAdmin())) || isAdmin();
+      allow delete: if isAdmin();
+
+      // Subcollection: Favorites
+      match /favorites/{favId} {
+        allow read, write: if isOwner(userId) && isValidId(favId);
+      }
+
+      // Subcollection: History
+      match /history/{historyId} {
+        allow read, write: if isOwner(userId) && isValidId(historyId);
+      }
+
+      // Subcollection: Presets
+      match /presets/{presetId} {
+        allow read, write: if isOwner(userId) && isValidId(presetId);
+      }
+    }
+
+    // Global site settings (announcements, featured tools)
+    match /site_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Admin audit logs
+    match /admin_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Test connection doc
+    match /test/{testId} {
+      allow read: if true;
+    }
+  }
+}

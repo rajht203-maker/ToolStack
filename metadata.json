@@ -1,0 +1,6 @@
+{
+  "name": "ToolStack",
+  "description": "All-in-one free online tools platform with 270+ utilities including Business Card Maker, Logo QR generator, 75+ PDF tools, 60+ photo editors, and developer utilities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

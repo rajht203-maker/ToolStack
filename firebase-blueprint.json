@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User account profile and role details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "email", "role"]
+    },
+    "UserFavorite": {
+      "title": "User Favorite Tool",
+      "description": "Bookmarked favorite tools per user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "toolId": { "type": "string", "maxLength": 64 },
+        "toolName": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "toolId", "toolName"]
+    },
+    "ToolHistory": {
+      "title": "Tool Usage History",
+      "description": "Log of tools run by the user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "toolId": { "type": "string", "maxLength": 64 },
+        "toolName": { "type": "string", "maxLength": 128 },
+        "summary": { "type": "string", "maxLength": 256 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "toolId", "toolName"]
+    },
+    "SavedPreset": {
+      "title": "Saved Preset",
+      "description": "User saved tool parameters or configurations",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "toolId": { "type": "string", "maxLength": 64 },
+        "name": { "type": "string", "maxLength": 128 },
+        "presetData": { "type": "string", "maxLength": 2048 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "toolId", "name", "presetData"]
+    },
+    "SiteSettings": {
+      "title": "Site Settings",
+      "description": "Global settings, announcements and toggles",
+      "type": "object",
+      "properties": {
+        "announcement": { "type": "string", "maxLength": 512 },
+        "maintenanceMode": { "type": "boolean" },
+        "featuredTools": { "type": "string", "maxLength": 512 },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string", "maxLength": 256 }
+      },
+      "required": ["announcement", "maintenanceMode"]
+    },
+    "AdminLog": {
+      "title": "Admin Audit Log",
+      "description": "Auditable log of actions performed by administrators",
+      "type": "object",
+      "properties": {
+        "adminId": { "type": "string", "maxLength": 128 },
+        "adminEmail": { "type": "string", "maxLength": 256 },
+        "action": { "type": "string", "maxLength": 128 },
+        "details": { "type": "string", "maxLength": 1024 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminId", "adminEmail", "action"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Stores user profiles and role assignments"
+    },
+    "/users/{userId}/favorites/{favId}": {
+      "schema": "UserFavorite",
+      "description": "User's bookmarked tools"
+    },
+    "/users/{userId}/history/{historyId}": {
+      "schema": "ToolHistory",
+      "description": "User's tool execution history"
+    },
+    "/users/{userId}/presets/{presetId}": {
+      "schema": "SavedPreset",
+      "description": "User's saved configurations"
+    },
+    "/site_settings/{settingId}": {
+      "schema": "SiteSettings",
+      "description": "Global portal configurations and announcements"
+    },
+    "/admin_logs/{logId}": {
+      "schema": "AdminLog",
+      "description": "Admin action audit logs"
+    }
+  }
+}
